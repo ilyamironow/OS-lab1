@@ -43,7 +43,7 @@ int main() {
 	}
 	//thread number D
 	forthread[D-1].adr = first;
-	forthread[D-1].bytes = block + remainder(A*pow(2,20),D);
+	forthread[D-1].bytes = block + remainder(A*pow(2,20),D) + D;
 	forthread[D-1].randomnums = randomnums;
 	pthread_create(&thread[D-1], NULL, filler, &forthread[D-1]);
 //check for the end of filling with random data
@@ -52,6 +52,6 @@ int main() {
 	}
 	fclose(randomnums);
 	
-	printf("%.0f should be equal to %d\n", A*pow(2,20), check);
+	printf("%.0f should be filled, but was filled %d\n", A*pow(2,20), check);
 	return 0;
 }

@@ -22,13 +22,13 @@ typedef struct {
 
 
 typedef struct {
-    pthread_mutex_t* mutex;
+    pthread_mutex_t *mutex;
     char *adr;
     char *filename;
 } FileFillerArgs;
 
 typedef struct {
-    pthread_mutex_t* mutex;
+    pthread_mutex_t *mutex;
     char *filename;
 } FileReaderArgs;
 
@@ -50,7 +50,7 @@ _Noreturn void *fileFiller(void *arg) {
         FileFillerArgs *args = (FileFillerArgs *) arg;
         char *filename = args->filename;
         char *src = args->adr;
-        pthread_mutex_t* mutex = args->mutex;
+        pthread_mutex_t *mutex = args->mutex;
         pthread_mutex_lock(mutex);
         FILE *fd = fopen(filename, "wb");
         lockf(fileno(fd), F_LOCK, 0);
@@ -70,9 +70,9 @@ _Noreturn void *fileFiller(void *arg) {
 }
 
 
-int find_max(int* buf, int size) {
+int find_max(int *buf, int size) {
     int max = INT_MIN;
-    for (int* i = buf; i < buf + size; i++) {
+    for (int *i = buf; i < buf + size; i++) {
         int val = *i;
         if (val > max)
             max = val;
@@ -85,7 +85,7 @@ _Noreturn void *fileReader(void *arg) {
     while (1) {
         FileReaderArgs *args = (FileReaderArgs *) arg;
         char *filename = args->filename;
-        pthread_mutex_t* mutex = args->mutex;
+        pthread_mutex_t *mutex = args->mutex;
         pthread_mutex_lock(mutex);
         FILE *fd = fopen(filename, "rb");
         if (fd == NULL) {
@@ -96,13 +96,13 @@ _Noreturn void *fileReader(void *arg) {
         fseek(fd, 0, SEEK_SET);
         int fileBlockCount = E * 1024 * 1024 / G;
         int max = INT_MIN;
-        char* buf[G];
+        char *buf[G];
         for (int i = 0; i < fileBlockCount; i++) {
             if (fread(buf, 1, G, fd) != G) {
                 continue;
             }
-            int localMax = find_max((int* ) buf, G / 4);
-            if (localMax > max){
+            int localMax = find_max((int *) buf, G / 4);
+            if (localMax > max) {
                 max = localMax;
             }
         }
@@ -114,16 +114,19 @@ _Noreturn void *fileReader(void *arg) {
 }
 
 int main() {
-    printf("Enter desired time running time in seconds: ");
+    printf("Enter desired running time in seconds: ");
     int time;
     scanf("%d", &time);
     //mapping A megabytes from B address (if possible) using mmap
-    char *startAddress = mmap((void *) B, A * pow(2, 20), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    char *startAddress = mmap((void *) B, A * 1024 * 1024, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (startAddress == MAP_FAILED) {
         printf("Bro, we failed");
         return 0;
-    } else
+    } else {
         printf("Starting address of mapped area is %p\n", startAddress);
+        getchar();
+        getchar();
+    }
     //filling our mapped area with random numbers in D threads
     char *randomnums = "/dev/urandom";
     long block = A * pow(2, 20) / D;
@@ -175,9 +178,20 @@ int main() {
         if (k == fileCnt)
             k = 0;
     }
-
     sleep(time);
+    for (int i = 0; i < D; ++i) {
+        pthread_cancel(memoryFillerThreads[i]);
+    }
+    for (int i = 0; i < fileCnt; ++i) {
+        pthread_cancel(fileFillerThreads[i]);
+    }
+    for (int i = 0; i < I; ++i) {
+        pthread_cancel(fileReaderThreads[i]);
+    }
+
     //unmapping our area of A MB
     munmap(startAddress, A * pow(2, 20));
+    printf("Memory was deallocated");
+    getchar();
     return 0;
 }

@@ -151,7 +151,7 @@ int main() {
     for (int i = 0; i < fileCnt; i++) {
         pthread_mutex_init(&(mutexes[i]), NULL);
     }
-
+    
     //files writing threads
     FileFillerArgs fileFillerArgs[fileCnt];
     pthread_t fileFillerThreads[fileCnt];
@@ -183,15 +183,19 @@ int main() {
         pthread_cancel(memoryFillerThreads[i]);
     }
     for (int i = 0; i < fileCnt; ++i) {
-        pthread_cancel(fileFillerThreads[i]);
+        pthread_cancel(fileFillerThreads[i]);      	
     }
     for (int i = 0; i < I; ++i) {
         pthread_cancel(fileReaderThreads[i]);
     }
-
+    getchar();
+    printf("Memory is ready to be deallocated");
+    getchar();
+    getchar();
     //unmapping our area of A MB
     munmap(startAddress, A * pow(2, 20));
     printf("Memory was deallocated");
+    getchar();
     getchar();
     return 0;
 }
